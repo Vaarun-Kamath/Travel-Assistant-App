@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_mao/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -13,7 +14,6 @@ class Assistant extends StatefulWidget {
 }
 
 class AssistantState extends State<Assistant> {
-  // ignore: unused_field
   final Completer<GoogleMapController> _controller = Completer();
 
   static const LatLng sourceLocation = LatLng(37.4223, -122.0848);
@@ -36,7 +36,7 @@ class AssistantState extends State<Assistant> {
   BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor currentLocationIcon = BitmapDescriptor.defaultMarker;
 
-  void getCurrrentLocation() async {
+  Future<void> getCurrrentLocation() async {
     Location location = Location();
 
     location.getLocation().then(
@@ -103,110 +103,147 @@ class AssistantState extends State<Assistant> {
 
   @override
   void initState() {
-    // getCurrrentLocation();
-    // setCustomMarkerIcon();
+    getCurrrentLocation();
+    setCustomMarkerIcon();
     // getPolyPoints();
     super.initState();
   }
+
+  static const bool showMap = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           title: const Text(
-            "Assistant",
+            "Plan your trip",
             style: TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
-        body: currentLocation != null
-            ? const Center(child: Text("Loading")) // Change this (Maybe idk)
+        body: currentLocation == null
+            ? const Center(
+                child: CircularProgressIndicator()) // Change this (Maybe idk)
             : Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: EdgeInsets.all(10),
                 child: Column(
                   children: [
-                    Container(
-                      height: 300,
-                      // child: GoogleMap(
-                      //   initialCameraPosition: CameraPosition(
-                      //     target: LatLng(currentLocation!.latitude!,
-                      //         currentLocation!.longitude!),
-                      //     zoom: 13.5,
-                      //   ),
-                      //   polylines: {
-                      //     Polyline(
-                      //       polylineId: const PolylineId("route"),
-                      //       points: polylineCoordinates,
-                      //       color: primaryColor,
-                      //       width: 6,
-                      //     )
-                      //   },
-                      //   markers: {
-                      //     Marker(
-                      //       markerId: const MarkerId("currentLocation"),
-                      //       position: LatLng(currentLocation!.latitude!,
-                      //           currentLocation!.longitude!),
-                      //       icon: currentLocationIcon,
-                      //     ),
-                      //     Marker(
-                      //       markerId: const MarkerId("source"),
-                      //       position: sourceLocation,
-                      //       icon: sourceIcon,
-                      //     ),
-                      //     Marker(
-                      //       markerId: const MarkerId("destination"),
-                      //       position: destination,
-                      //       icon: destinationIcon,
-                      //     ),
-                      //   },
-                      //   onMapCreated: (mapController) {
-                      //     _controller.complete(mapController);
-                      //   },
-                      // ),
+                    Stack(
+                      children: [
+                        SizedBox(
+                          height: 300,
+                          child: !showMap
+                              ? const Center(
+                                  child: Text("Map is disabled"),
+                                )
+                              : GoogleMap(
+                                  initialCameraPosition: CameraPosition(
+                                    target: LatLng(currentLocation!.latitude!,
+                                        currentLocation!.longitude!),
+                                    zoom: 13.5,
+                                  ),
+                                  // polylines: {
+                                  //   Polyline(
+                                  //     polylineId: const PolylineId("route"),
+                                  //     points: polylineCoordinates,
+                                  //     color: primaryColor,
+                                  //     width: 6,
+                                  //   )
+                                  // }, //! TEMP COMMENT --------------------------------
+                                  markers: {
+                                    Marker(
+                                      markerId:
+                                          const MarkerId("currentLocation"),
+                                      position: LatLng(
+                                          currentLocation!.latitude!,
+                                          currentLocation!.longitude!),
+                                      icon: currentLocationIcon,
+                                    ),
+                                    Marker(
+                                      markerId: const MarkerId("source"),
+                                      position: sourceLocation,
+                                      icon: sourceIcon,
+                                    ),
+                                    Marker(
+                                      markerId: const MarkerId("destination"),
+                                      position: destination,
+                                      icon: destinationIcon,
+                                    ),
+                                  },
+                                  myLocationEnabled: true,
+                                  myLocationButtonEnabled: true,
+                                  // zoomGesturesEnabled: true,
+                                  zoomControlsEnabled: false,
+                                  onMapCreated: (mapController) {
+                                    _controller.complete(mapController);
+                                  },
+                                ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          heightFactor: 5,
+                          child: RawMaterialButton(
+                            onPressed: () {},
+                            elevation: 2.0,
+                            fillColor: Colors.white,
+                            padding: const EdgeInsets.all(15.0),
+                            shape: const CircleBorder(),
+                            child: const Icon(
+                              Icons.fullscreen,
+                              size: 25.0,
+                            ),
+                          ),
+                        )
+                      ],
                     ),
                     const SizedBox(height: 10),
-                    SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Card(
-                            child: SizedBox(
-                              height: 100,111
-                              child: Center(child: Text("Test 1")),
+                    const SizedBox(height: 10),
+                    const Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Column(
+                          children: [
+                            Card(
+                              child: SizedBox(
+                                height: 100,
+                                child: Center(child: Text("Test 1")),
+                              ),
                             ),
-                          ),
-                          Card(
-                            child: SizedBox(
-                              height: 100,
-                              child: Center(child: Text("Test 2")),
+                            Card(
+                              child: SizedBox(
+                                height: 100,
+                                child: Center(child: Text("Test 2")),
+                              ),
                             ),
-                          ),
-                          Card(
-                            child: SizedBox(
-                              height: 100,
-                              child: Center(child: Text("Test 3")),
+                            Card(
+                              child: SizedBox(
+                                height: 100,
+                                child: Center(child: Text("Test 3")),
+                              ),
                             ),
-                          ),
-                          Card(
-                            child: SizedBox(
-                              height: 100,
-                              child: Center(child: Text("Test 3")),
+                            Card(
+                              child: SizedBox(
+                                height: 100,
+                                child: Center(child: Text("Test 3")),
+                              ),
                             ),
-                          ),
-                          Card(
-                            child: SizedBox(
-                              height: 100,
-                              child: Center(child: Text("Test 3")),
+                            Card(
+                              child: SizedBox(
+                                height: 100,
+                                child: Center(child: Text("Test 3")),
+                              ),
                             ),
-                          ),
-                          Card(
-                            child: SizedBox(
-                              height: 100,
-                              child: Center(child: Text("Test 3")),
+                            Card(
+                              child: SizedBox(
+                                height: 100,
+                                child: Center(child: Text("Test 3")),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    )
+                    ),
                   ],
-                )));
+                ),
+              ));
   }
 }
