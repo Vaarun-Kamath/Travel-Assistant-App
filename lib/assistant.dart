@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+// import 'dart:html';
 import 'package:flutter/material.dart';
 // import 'package:flutter/rendering.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_mao/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'package:expansion_tile_card/expansion_tile_card.dart';
 
 class Assistant extends StatefulWidget {
   const Assistant({Key? key}) : super(key: key);
@@ -18,13 +18,8 @@ class Assistant extends StatefulWidget {
 class AssistantState extends State<Assistant> {
   final Completer<GoogleMapController> _controller = Completer();
 
-  static const LatLng sourceLocation = LatLng(12.972442, 77.580643);
-  static const LatLng destination = LatLng(12.31261, 76.65303);
-  List places = [];
-  Set<Marker> marker = new Set();
-  List<LatLng> polylineCoordinates = [];
-  int Numfactor = 100;
-
+  static const LatLng sourceLocation = LatLng(37.4223, -122.0848);
+  static const LatLng destination = LatLng(37.4116, -122.0713);
   Map<String, dynamic> placesRecommendation = {
     "1": {
       "name": "Bangalore Gate Hotel & Conferences",
@@ -58,13 +53,6 @@ class AssistantState extends State<Assistant> {
     }, //! ADD MORE INFORMATION LATER ==============
   };
 
-  Marker MarkerMaker(Map<String, dynamic> place) {
-    return Marker(
-        markerId: MarkerId("souuu"),
-        position: LatLng(place['results'][0]['geometry']['location']['lat'],
-            place['results'][0]['geometry']['location']['lng']));
-  }
-
   TextField InputBox(String val) {
     return TextField(
       decoration: InputDecoration(
@@ -75,40 +63,59 @@ class AssistantState extends State<Assistant> {
     );
   }
 
-  // LocationData? currentLocation;
-  static const LatLng currentLocation = sourceLocation;
+  List<LatLng> polylineCoordinates = [];
+  LocationData? currentLocation;
 
   BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
   BitmapDescriptor currentLocationIcon = BitmapDescriptor.defaultMarker;
 
-  // Future<void> getCurrrentLocation() async {
-  //   Location location = Location();
+  Future<void> getCurrrentLocation() async {
+    Location location = Location();
 
-  //   location.getLocation().then(
-  //     (location) {
-  //       currentLocation = location;
-  //     },
-  //   );
+    location.getLocation().then(
+      (location) {
+        currentLocation = location;
+      },
+    );
 
-  //   GoogleMapController googleMapController = await _controller.future;
+    GoogleMapController googleMapController = await _controller.future;
 
-  //   location.onLocationChanged.listen((newLoc) {
-  //     currentLocation = newLoc;
-  //     googleMapController.animateCamera(
-  //       CameraUpdate.newCameraPosition(
-  //         CameraPosition(
-  //           zoom: 13.5,
-  //           target: LatLng(
-  //             newLoc.latitude!,
-  //             newLoc.longitude!,
-  //           ),
-  //         ),
-  //       ),
-  //     );
-  //     setState(() {});
-  //   });
-  // }
+    location.onLocationChanged.listen((newLoc) {
+      currentLocation = newLoc;
+      googleMapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            zoom: 13.5,
+            target: LatLng(
+              newLoc.latitude!,
+              newLoc.longitude!,
+            ),
+          ),
+        ),
+      );
+      setState(() {});
+    });
+  }
+
+  void getPolyPoints() async {
+    PolylinePoints polylinePoints = PolylinePoints();
+
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      google_api_key,
+      PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
+      PointLatLng(destination.latitude, destination.longitude),
+    );
+
+    if (result.points.isNotEmpty) {
+      result.points.forEach(
+        (PointLatLng point) => polylineCoordinates.add(
+          LatLng(point.latitude, point.longitude),
+        ),
+      );
+      setState(() {});
+    }
+  }
 
   void getRecommendation() {} // TODO
 
@@ -130,75 +137,16 @@ class AssistantState extends State<Assistant> {
     });
   }
 
-  void getPolyPoints() async {
-    PolylinePoints polylinePoints = PolylinePoints();
-    final Set<Marker> tempMarker = new Set();
-    List tempPlaces = [];
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-        google_api_key,
-        PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
-        PointLatLng(destination.latitude, destination.longitude));
-
-    print(result.errorMessage);
-
-    if (result.points.isNotEmpty) {
-      for (var point in result.points) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      }
-    }
-    // var len = polylineCoordinates.length;
-    double lat, lang;
-
-    for (var i = 0; i < 30; i += 10) {
-      lat = polylineCoordinates[i].latitude;
-      lang = polylineCoordinates[i].longitude;
-      var res = await http.get(Uri.https(
-          'maps.googleapis.com', '/maps/api/place/nearbysearch/json', {
-        'location': '$lat,$lang',
-        'radius': '1500',
-        'type': 'restaurant',
-        'key': google_api_key
-      }));
-      // print(res.statusCode);
-      if (res.statusCode == 200) {
-        tempMarker
-            .add(MarkerMaker(json.decode(res.body) as Map<String, dynamic>));
-        tempPlaces.add(json.decode(res.body) as Map<String, dynamic>);
-      }
-    }
-    setState(() {
-      places = tempPlaces;
-      marker = tempMarker;
-    });
-  }
-
   @override
   void initState() {
-    // marker.add(Marker(
-    //   markerId: const MarkerId("currentLocation"),
-    //   position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-    //   icon: currentLocationIcon,
-    // ));
-    marker.add(
-      Marker(
-        markerId: const MarkerId("source"),
-        position: sourceLocation,
-        icon: sourceIcon,
-      ),
-    );
-    marker.add(Marker(
-      markerId: const MarkerId("destination"),
-      position: destination,
-      icon: destinationIcon,
-    ));
-    // getCurrrentLocation();
-    // setCustomMarkerIcon();
-    getPolyPoints();
+    getCurrrentLocation();
+    setCustomMarkerIcon();
     getRecommendation();
+    // getPolyPoints();
     super.initState();
   }
 
-  static const bool showMap = true;
+  static const bool showMap = false;
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +157,7 @@ class AssistantState extends State<Assistant> {
             style: TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
-        body: currentLocation == null || marker.length != 3
+        body: currentLocation == null
             ? const Center(
                 child: CircularProgressIndicator()) // Change this (Maybe idk)
             : Padding(
@@ -226,19 +174,38 @@ class AssistantState extends State<Assistant> {
                                 )
                               : GoogleMap(
                                   initialCameraPosition: CameraPosition(
-                                    target: LatLng(sourceLocation.latitude,
-                                        sourceLocation.longitude),
+                                    target: LatLng(currentLocation!.latitude!,
+                                        currentLocation!.longitude!),
                                     zoom: 13.5,
                                   ),
-                                  polylines: {
-                                    Polyline(
-                                      polylineId: const PolylineId("route"),
-                                      points: polylineCoordinates,
-                                      color: primaryColor,
-                                      width: 6,
-                                    )
-                                  }, //! TEMP COMMENT --------------------------------
-                                  markers: marker,
+                                  // polylines: {
+                                  //   Polyline(
+                                  //     polylineId: const PolylineId("route"),
+                                  //     points: polylineCoordinates,
+                                  //     color: primaryColor,
+                                  //     width: 6,
+                                  //   )
+                                  // }, //! TEMP COMMENT --------------------------------
+                                  markers: {
+                                    Marker(
+                                      markerId:
+                                          const MarkerId("currentLocation"),
+                                      position: LatLng(
+                                          currentLocation!.latitude!,
+                                          currentLocation!.longitude!),
+                                      icon: currentLocationIcon,
+                                    ),
+                                    Marker(
+                                      markerId: const MarkerId("source"),
+                                      position: sourceLocation,
+                                      icon: sourceIcon,
+                                    ),
+                                    Marker(
+                                      markerId: const MarkerId("destination"),
+                                      position: destination,
+                                      icon: destinationIcon,
+                                    ),
+                                  },
                                   myLocationEnabled: true,
                                   myLocationButtonEnabled: true,
                                   // zoomGesturesEnabled: true,
@@ -272,29 +239,82 @@ class AssistantState extends State<Assistant> {
                         scrollDirection: Axis.vertical,
                         child: Column(
                           children: [
-                            for (var i = 0; i < places.length; i++)
+                            for (var i in placesRecommendation.keys)
+                              // Card(
+                              //   child: SizedBox(
+                              //       height: 100,
+                              //       child: Center(
+                              //         child: Padding(
+                              //           padding: const EdgeInsets.all(10),
+                              //           child: Column(
+                              //             children: [
+                              //               Text(placesRecommendation[i]
+                              //                   ['name']),
+                              //               Text(placesRecommendation[i]['lat']
+                              //                   .toString()),
+                              //               Text(placesRecommendation[i]['lng']
+                              //                   .toString()),
+                              //             ],
+                              //           ),
+                              //         ),
+                              //       )),
+                              // ),
                               Card(
-                                child: SizedBox(
-                                    height: 100,
-                                    child: Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Column(
-                                          children: [
-                                            Text(places[i]['results'][0]
-                                                ['name']),
-                                            Text(places[i]['results'][0]
-                                                        ['geometry']['location']
-                                                    ['lat']
-                                                .toString()),
-                                            Text(places[i]['results'][0]
-                                                        ['geometry']['location']
-                                                    ['lng']
-                                                .toString()),
-                                          ],
-                                        ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Column(
+                                  children: [
+                                    ListTile(
+                                      leading:
+                                          Icon(Icons.arrow_drop_down_circle),
+                                      title:
+                                          Text(placesRecommendation[i]['name']),
+                                      subtitle: Text(
+                                        'Secondary Text',
+                                        style: TextStyle(
+                                            color:
+                                                Colors.black.withOpacity(0.6)),
                                       ),
-                                    )),
+                                    ),
+                                    Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(children: [
+                                          Text(
+                                            placesRecommendation[i]['lat']
+                                                .toString(),
+                                            style: TextStyle(
+                                                color: Colors.black
+                                                    .withOpacity(0.6)),
+                                          ),
+                                          Text(
+                                            placesRecommendation[i]['lng']
+                                                .toString(),
+                                            style: TextStyle(
+                                                color: Colors.black
+                                                    .withOpacity(0.6)),
+                                          ),
+                                        ])),
+                                    // ButtonBar(
+                                    //   alignment: MainAxisAlignment.start,
+                                    //   children: [
+                                    //     TextButton(
+                                    //       onPressed: () {
+                                    //         // Perform some action
+                                    //       },
+                                    //       child: const Text('ACTION 1'),
+                                    //     ),
+                                    //     TextButton(
+                                    //       onPressed: () {
+                                    //         // Perform some action
+                                    //       },
+                                    //       child: const Text('ACTION 2'),
+                                    //     ),
+                                    //   ],
+                                    // ),
+                                    // Image.asset('assets/card-sample-image.jpg'),
+                                    // Image.asset(
+                                    //     'assets/card-sample-image-2.jpg'),
+                                  ],
+                                ),
                               ),
                             const SizedBox(
                               height: 10,
