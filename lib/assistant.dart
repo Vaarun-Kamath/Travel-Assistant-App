@@ -1,6 +1,7 @@
 import 'dart:async';
+// import 'dart:html';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+// import 'package:flutter/rendering.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_mao/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -18,6 +19,38 @@ class AssistantState extends State<Assistant> {
 
   static const LatLng sourceLocation = LatLng(37.4223, -122.0848);
   static const LatLng destination = LatLng(37.4116, -122.0713);
+  Map<String, dynamic> placesRecommendation = {
+    "1": {
+      "name": "Bangalore Gate Hotel & Conferences",
+      "lat": 12.9736482,
+      "lng": 77.57919369999999
+    },
+    "2": {
+      "name": "Sri renuka hotel",
+      "lat": 12.7829874,
+      "lng": 77.371534,
+    },
+    "3": {
+      "name": "Hotel Roopa",
+      "lat": 12.3083161,
+      "lng": 76.65963219999999,
+    },
+    "4": {
+      "name": "Hotel Roopa",
+      "lat": 12.3083161,
+      "lng": 76.65963219999999,
+    },
+    "5": {
+      "name": "Hotel Roopa",
+      "lat": 12.3083161,
+      "lng": 76.65963219999999,
+    },
+    "6": {
+      "name": "Hotel Roopa",
+      "lat": 12.3083161,
+      "lng": 76.65963219999999,
+    }, //! ADD MORE INFORMATION LATER ==============
+  };
 
   TextField InputBox(String val) {
     return TextField(
@@ -83,6 +116,8 @@ class AssistantState extends State<Assistant> {
     }
   }
 
+  void getRecommendation() {} // TODO
+
   void setCustomMarkerIcon() {
     BitmapDescriptor.fromAssetImage(
             ImageConfiguration.empty, 'assets/Pin_source.png')
@@ -105,6 +140,7 @@ class AssistantState extends State<Assistant> {
   void initState() {
     getCurrrentLocation();
     setCustomMarkerIcon();
+    getRecommendation();
     // getPolyPoints();
     super.initState();
   }
@@ -124,7 +160,7 @@ class AssistantState extends State<Assistant> {
             ? const Center(
                 child: CircularProgressIndicator()) // Change this (Maybe idk)
             : Padding(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   children: [
                     Stack(
@@ -197,46 +233,42 @@ class AssistantState extends State<Assistant> {
                     ),
                     const SizedBox(height: 10),
                     const SizedBox(height: 10),
-                    const Expanded(
+                    Expanded(
                       child: SingleChildScrollView(
                         scrollDirection: Axis.vertical,
                         child: Column(
                           children: [
-                            Card(
-                              child: SizedBox(
-                                height: 100,
-                                child: Center(child: Text("Test 1")),
+                            for (var i in placesRecommendation.keys)
+                              Card(
+                                child: SizedBox(
+                                    height: 100,
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Column(
+                                          children: [
+                                            Text(placesRecommendation[i]
+                                                ['name']),
+                                            Text(placesRecommendation[i]['lat']
+                                                .toString()),
+                                            Text(placesRecommendation[i]['lng']
+                                                .toString()),
+                                          ],
+                                        ),
+                                      ),
+                                    )),
                               ),
+                            const SizedBox(
+                              height: 10,
                             ),
-                            Card(
-                              child: SizedBox(
-                                height: 100,
-                                child: Center(child: Text("Test 2")),
+                            OutlinedButton(
+                              style: ButtonStyle(
+                                foregroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.red),
                               ),
-                            ),
-                            Card(
-                              child: SizedBox(
-                                height: 100,
-                                child: Center(child: Text("Test 3")),
-                              ),
-                            ),
-                            Card(
-                              child: SizedBox(
-                                height: 100,
-                                child: Center(child: Text("Test 3")),
-                              ),
-                            ),
-                            Card(
-                              child: SizedBox(
-                                height: 100,
-                                child: Center(child: Text("Test 3")),
-                              ),
-                            ),
-                            Card(
-                              child: SizedBox(
-                                height: 100,
-                                child: Center(child: Text("Test 3")),
-                              ),
+                              onPressed: () {/* ! Navigate to route */},
+                              child: const Text('Start Trip'),
                             ),
                           ],
                         ),
