@@ -40,17 +40,6 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
             const SizedBox(height: 30),
             InputBox("Enter Ending Location"),
             const SizedBox(height: 30),
-            ElevatedButton(
-              style: ButtonStyle(
-                foregroundColor: MaterialStateProperty.all<Color>(
-                    const Color.fromRGBO(217, 41, 41, 1)),
-                backgroundColor: MaterialStateProperty.all<Color>(
-                    const Color.fromARGB(255, 255, 255, 255)),
-              ),
-              onPressed: () => print("Assist Trip"),
-              child: const Text("Assist Trip"),
-            ),
-            const SizedBox(height: 10),
             OutlinedButton(
               style: ButtonStyle(
                   foregroundColor: MaterialStateProperty.all<Color>(
